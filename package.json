@@ -1,0 +1,9 @@
+{
+  "name": "kick-duel-giveaway",
+  "version": "2.0.0",
+  "description": "Kick chat duel giveaway app for Railway",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {"start": "node server.js"},
+  "dependencies": {"express": "^4.19.2", "socket.io": "^4.7.5", "ws": "^8.18.0"}
+}
