@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><script src="/socket.io/socket.io.js"></script><style>
+body{margin:0;background:linear-gradient(135deg,#2b064f 0%,#6d28d9 45%,#9333ea 100%);font-family:Arial,Helvetica,sans-serif;color:white;overflow:hidden}.box{position:absolute;left:30px;top:30px;width:560px;background:rgba(24,10,45,.88);border:2px solid rgba(168,85,247,.8);border-radius:24px;padding:22px;box-shadow:0 0 35px rgba(168,85,247,.35)}.title{font-size:28px;font-weight:900;text-align:center;margin-bottom:14px;text-shadow:0 2px 8px #000}.join{text-align:center;color:#ddd;font-size:18px;margin-bottom:18px}.row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fighter{background:rgba(255,255,255,.08);border-radius:18px;padding:14px}.name{font-size:28px;font-weight:900;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hp{height:28px;background:#251a37;border-radius:999px;overflow:hidden;margin:12px 0;border:1px solid rgba(255,255,255,.25)}.fill{height:100%;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e);transition:width .25s linear}.num{text-align:center;font-size:18px}.winner{font-size:38px;font-weight:900;text-align:center;color:#facc15;margin-top:14px;text-shadow:0 3px 10px #000}.pool{text-align:center;font-size:38px;font-weight:900}.log{text-align:center;color:#ddd;margin-top:12px;font-size:18px}
+</style></head><body><div class="box"><div class="title">⚔️ DUEL GIVEAWAY ⚔️</div><div id="content"><div class="join">Type <b id="cmd">!duel</b> in Kick chat to enter</div><div class="pool"><span id="count">0</span> entered</div></div></div><script>
+const content=document.getElementById('content');
+let lastJSON='';
+function pct(v,max){return Math.max(0,Math.min(100,Math.round((Number(v)||0)/(Number(max)||100)*100)))}
+function esc(x){return String(x||'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function render(s){
+  const json=JSON.stringify({pc:s.poolCount,cmd:s.command,d:s.currentDuel});
+  if(json===lastJSON) return;
+  lastJSON=json;
+  const d=s.currentDuel;
+  if(!d){
+    content.innerHTML=`<div class="join">Type <b>${esc(s.command||'!duel')}</b> in Kick chat to enter</div><div class="pool">${s.poolCount||0} entered</div>`;
+    return;
+  }
+  content.innerHTML=`<div class="row"><div class="fighter"><div class="name">${esc(d.fighter1)}</div><div class="hp"><div class="fill" style="width:${pct(d.hp1,d.maxHp)}%"></div></div><div class="num">${d.hp1}/${d.maxHp} HP</div></div><div class="fighter"><div class="name">${esc(d.fighter2)}</div><div class="hp"><div class="fill" style="width:${pct(d.hp2,d.maxHp)}%"></div></div><div class="num">${d.hp2}/${d.maxHp} HP</div></div></div>${d.winner?`<div class="winner">🏆 ${esc(d.winner)} WINS</div>`:''}<div class="log">${esc((d.log||[])[0]||'')}</div>`;
+}
+async function poll(){
+  try{ const s=await fetch('/api/state?ts='+Date.now(),{cache:'no-store'}).then(r=>r.json()); render(s); }catch(e){}
+}
+try{
+  const socket=io({transports:['websocket','polling'],reconnection:true});
+  socket.on('state',render);
+  socket.on('connect',poll);
+}catch(e){}
+setInterval(poll,1000);
+poll();
+</script></body></html>
